@@ -1,0 +1,19 @@
+[Unit]
+Description=Kryten API Gate - HTTP REST gateway for the Kryten ecosystem
+After=network.target nats-server.service
+Wants=nats-server.service
+
+[Service]
+Type=simple
+User=kryten
+Group=kryten
+WorkingDirectory=/opt/kryten/api-gate
+ExecStart=/opt/kryten/api-gate/venv/bin/kryten-api-gate
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

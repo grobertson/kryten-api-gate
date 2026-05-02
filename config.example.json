@@ -1,0 +1,14 @@
+{
+  "nats_url": "nats://localhost:4222",
+  "channel": "your_channel_name",
+  "domain": "cytu.be",
+  "http_host": "127.0.0.1",
+  "http_port": 28288,
+  "api_keys": [
+    "change-me-to-a-secure-random-token"
+  ],
+  "kv_read_only": false,
+  "service_name": "kryten-api-gate",
+  "log_level": "info",
+  "disabled_routes": []
+}
