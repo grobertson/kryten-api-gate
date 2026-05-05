@@ -158,8 +158,8 @@ async def request_channel_ranks(
     client: KrytenClient = Depends(get_client),
     config: Config = Depends(get_config),
 ) -> dict:
-    msg_id = await client.request_channel_ranks(config.channel, domain=config.domain)
-    return {"message_id": msg_id}
+    data = await client.get_channel_ranks(config.channel, domain=config.domain)
+    return data
 
 
 @router.put("/rank")
@@ -183,5 +183,5 @@ async def read_chan_log(
     client: KrytenClient = Depends(get_client),
     config: Config = Depends(get_config),
 ) -> dict:
-    msg_id = await client.read_chan_log(config.channel, count, domain=config.domain)
-    return {"message_id": msg_id}
+    data = await client.get_chan_log(config.channel, count, domain=config.domain)
+    return data

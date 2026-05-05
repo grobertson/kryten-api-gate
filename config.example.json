@@ -1,8 +1,8 @@
 {
   "nats_url": "nats://localhost:4222",
-  "channel": "your_channel_name",
+  "channel": "Channel_z" ,
   "domain": "cytu.be",
-  "http_host": "127.0.0.1",
+  "http_host": "0.0.0.0",
   "http_port": 28288,
   "api_keys": [
     "change-me-to-a-secure-random-token"

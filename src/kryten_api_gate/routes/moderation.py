@@ -94,8 +94,8 @@ async def request_banlist(
     client: KrytenClient = Depends(get_client),
     config: Config = Depends(get_config),
 ) -> dict:
-    msg_id = await client.request_banlist(config.channel, domain=config.domain)
-    return {"message_id": msg_id}
+    data = await client.get_banlist(config.channel, domain=config.domain)
+    return data
 
 
 @router.delete("/ban/{ban_id}")

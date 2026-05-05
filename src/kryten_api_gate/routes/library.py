@@ -17,10 +17,10 @@ async def search_library(
     client: KrytenClient = Depends(get_client),
     config: Config = Depends(get_config),
 ) -> dict:
-    msg_id = await client.search_library(
+    data = await client.get_library_search(
         config.channel, query, source, domain=config.domain
     )
-    return {"message_id": msg_id}
+    return data
 
 
 @router.delete("/{media_id}")
