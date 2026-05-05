@@ -399,15 +399,21 @@ curl -X POST $BASE/moderation/assign-leader \
 
 ### `GET /moderation/banlist`
 
-Requests the current ban list from the channel. The bot emits the result as an event; the response contains the dispatched `message_id`.
-
-> **Async-event limitation.** This endpoint does *not* return the ban list directly. It tells the bot to emit `requestBanlist` to CyTube; CyTube fires a `banlist` WebSocket event back at some indeterminate time later, which the bot receives but currently does not route back to this HTTP call. The response is only a dispatch acknowledgement — `{"message_id": "..."}` — not the actual list.
->
-> **Proper fix (TODO — Kryten-Robot + kryten-api-gate):** The bot should subscribe to the incoming `banlist` event and write the payload into the NATS KV store under a well-known key (e.g. `kryten-state / channel.banlist`). A background task in the bot should re-request the banlist every 30–60 seconds to keep it fresh. This endpoint should then read from KV and return the cached data synchronously. The same pattern applies to `GET /admin/ranks` below.
+Returns the channel ban list. The gateway sends a request to the bot, which queries CyTube and awaits the `banlist` response event synchronously (up to 5 s timeout).
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" $BASE/moderation/banlist
 ```
+
+```json
+{
+  "banlist": [
+    { "id": 7, "ip": "1.2.3.*", "name": "baduser", "bannedby": "admin", "note": "spamming" }
+  ]
+}
+```
+
+> **Note:** May return a timeout error (`500`) if CyTube does not respond within 5 seconds. This can happen if the bot lacks admin rank on the channel.
 
 ---
 
@@ -552,15 +558,22 @@ curl -X PUT $BASE/admin/permissions \
 
 ### `GET /admin/ranks`
 
-Requests the channel ranks list from the bot. The result is dispatched as an event; the response contains the `message_id`.
-
-> **Async-event limitation.** Same constraint as `GET /moderation/banlist` above — the bot emits `requestChannelRanks` to CyTube and the result arrives as an asynchronous `channelRanks` or `channelRankFail` WebSocket event that is not yet bridged back to this HTTP call. The response is only a dispatch acknowledgement.
->
-> **Proper fix (TODO):** Bot should cache the `channelRanks` event payload in KV (`kryten-state / channel.ranks`) and refresh it on a 30–60 s interval. This endpoint should serve from that cache.
+Returns the list of users with elevated channel ranks. The gateway sends a request to the bot, which queries CyTube and awaits the `channelRanks` response event synchronously (up to 5 s timeout).
 
 ```bash
 curl -H "Authorization: Bearer $TOKEN" $BASE/admin/ranks
 ```
+
+```json
+{
+  "ranks": [
+    { "name": "trusteduser", "rank": 2 },
+    { "name": "admin", "rank": 3 }
+  ]
+}
+```
+
+> **Note:** Requires the bot to have rank 4+ (owner) on the channel. May return a timeout error if CyTube does not respond within 5 seconds.
 
 ---
 
@@ -584,7 +597,7 @@ curl -X PUT $BASE/admin/rank \
 
 ### `GET /admin/log`
 
-Reads recent channel log entries.
+Returns recent channel log entries. The gateway sends a request to the bot, which queries CyTube and awaits the `readChanLog` response event synchronously (up to 5 s timeout).
 
 | Query param | Type | Default | Description |
 |-------------|------|---------|-------------|
@@ -593,6 +606,17 @@ Reads recent channel log entries.
 ```bash
 curl -H "Authorization: Bearer $TOKEN" "$BASE/admin/log?count=50"
 ```
+
+```json
+{
+  "log": [
+    { "time": 1714900000, "event": "Channel joined", "detail": "admin" },
+    { "time": 1714900060, "event": "Video added", "detail": "yt:dQw4w9WgXcQ" }
+  ]
+}
+```
+
+> **Note:** Requires rank 3+ (admin). May return a timeout error if CyTube does not respond within 5 seconds.
 
 ---
 
@@ -784,7 +808,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" $BASE/polls/close
 
 ### `GET /library/search`
 
-Searches the channel's media library.
+Searches the channel's media library. The gateway sends a request to the bot, which queries CyTube and awaits the `searchResults` response event synchronously (up to 5 s timeout).
 
 | Query param | Type | Required | Default | Description |
 |-------------|------|----------|---------|-------------|
@@ -794,6 +818,16 @@ Searches the channel's media library.
 ```bash
 curl -H "Authorization: Bearer $TOKEN" "$BASE/library/search?query=rick+astley"
 ```
+
+```json
+{
+  "results": [
+    { "id": "dQw4w9WgXcQ", "title": "Rick Astley - Never Gonna Give You Up", "type": "yt", "seconds": 212 }
+  ]
+}
+```
+
+> **Note:** May return a timeout error if CyTube does not respond within 5 seconds.
 
 ---
 
