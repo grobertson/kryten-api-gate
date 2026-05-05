@@ -1,6 +1,6 @@
 """Playlist routes — add, delete, move, jump, clear, shuffle, set_temp."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from kryten import KrytenClient
 from pydantic import BaseModel
 
@@ -32,7 +32,7 @@ async def add_media(
     client: KrytenClient = Depends(get_client),
     config: Config = Depends(get_config),
 ) -> dict:
-    msg_id = await client.add_media(
+    result = await client.add_media(
         config.channel,
         body.type,
         body.id,
@@ -40,7 +40,9 @@ async def add_media(
         temp=body.temp,
         domain=config.domain,
     )
-    return {"message_id": msg_id}
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed to add video"))
+    return result
 
 
 @router.delete("/{uid}")

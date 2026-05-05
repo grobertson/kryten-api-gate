@@ -158,17 +158,32 @@ Adds a media item to the playlist.
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `type` | string | yes | — | Media type: `yt`, `vi`, `dm`, `sc`, `fi`, `hl`, `tw`, `rt`, `gd`, `li` |
-| `id` | string | yes | — | Media ID for the given type (e.g. YouTube video ID) |
+| `type` | string | yes | — | Media type: `yt`, `vi`, `dm`, `sc`, `fi`, `hl`, `tw`, `rt`, `gd`, `li`, `cm` |
+| `id` | string | yes | — | Media ID for the given type (e.g. YouTube video ID). For `cm` (custom media), this must be the **full manifest URL** — see note below. |
 | `position` | string | no | `"end"` | Where to insert: `"end"` or `"next"` |
 | `temp` | bool | no | `true` | Whether the item is temporary (removed after playback) |
 
 ```bash
+# Standard media type (YouTube)
 curl -X POST $BASE/playlist/add \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"type": "yt", "id": "dQw4w9WgXcQ", "position": "end", "temp": true}'
+
+# Custom media (cm) — id must be the full manifest URL
+curl -X POST $BASE/playlist/add \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"type": "cm", "id": "https://example.com/media/manifest.json", "temp": false}'
 ```
+
+```json
+{ "success": true }
+```
+
+> **On failure** the bot returns `500` with `{"detail": "Failed to add video"}` if the socket.emit to CyTube did not succeed (e.g. bot not connected, insufficient rank).
+
+> **Custom media (`cm`).** CyTube's custom media type expects a URL pointing to a JSON manifest file that describes the media sources, subtitles, and metadata. The `id` field must be the full manifest URL (e.g. `https://example.com/video.json`), not a short ID. CyTube fetches and validates the manifest server-side when the item is queued.
 
 ---
 
