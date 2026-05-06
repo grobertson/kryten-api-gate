@@ -32,6 +32,10 @@ class Config(BaseModel):
         default_factory=list,
         description="List of route operation IDs to disable (e.g. 'playback_pause', 'playback_seek')",
     )
+    allowed_origins: list[str] = Field(
+        default_factory=list,
+        description="Origins permitted to make cross-origin requests (e.g. 'https://www.dropsugar.co'). Empty list disables CORS.",
+    )
 
 
 def load_config(config_path: str | None = None) -> Config:

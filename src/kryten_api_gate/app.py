@@ -1,8 +1,10 @@
 """FastAPI application factory for kryten-api-gate."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
+from .config import Config
 from .routes import (
     admin,
     chat,
@@ -19,13 +21,21 @@ from .routes import (
 )
 
 
-def create_app() -> FastAPI:
+def create_app(config: Config | None = None) -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
         title="kryten-api-gate",
         version=__version__,
         description="HTTP REST gateway for the Kryten ecosystem",
     )
+
+    if config and config.allowed_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=config.allowed_origins,
+            allow_methods=["GET", "POST", "PUT", "DELETE"],
+            allow_headers=["Authorization", "Content-Type"],
+        )
 
     # Public routes (no auth)
     app.include_router(system.public_router, prefix="/api/v1/system", tags=["system"])

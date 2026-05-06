@@ -72,7 +72,7 @@ async def main_async() -> None:
     logger.info("Connected to NATS")
 
     # Create FastAPI app and inject state
-    app = create_app()
+    app = create_app(config)
     app.state.client = client
     app.state.config = config
 
