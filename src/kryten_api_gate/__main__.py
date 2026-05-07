@@ -11,6 +11,7 @@ from kryten import KrytenClient
 
 from .app import create_app
 from .config import load_config
+from .playback_cache import PlaybackCache
 
 logger = logging.getLogger("kryten_api_gate")
 
@@ -76,6 +77,11 @@ async def main_async() -> None:
     app.state.client = client
     app.state.config = config
 
+    # Start live playback position cache (subscribes to NATS mediaUpdate)
+    playback_cache = PlaybackCache(client, config.channel)
+    await playback_cache.start()
+    app.state.playback_cache = playback_cache
+
     # Setup shutdown event
     shutdown_event = asyncio.Event()
 
@@ -110,6 +116,7 @@ async def main_async() -> None:
     logger.info("Shutting down...")
     server.should_exit = True
     await server_task
+    await playback_cache.stop()
     await client.disconnect("API gate shutting down")
     logger.info("Shutdown complete")
 
