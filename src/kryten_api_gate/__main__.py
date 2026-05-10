@@ -5,6 +5,7 @@ import asyncio
 import logging
 import signal
 import sys
+from importlib.metadata import version as pkg_version
 
 import uvicorn
 from kryten import KrytenClient
@@ -49,7 +50,7 @@ async def main_async() -> None:
     log_level = args.log_level or config.log_level
     setup_logging(log_level)
 
-    logger.info("Starting kryten-api-gate v0.1.0")
+    logger.info(f"Starting kryten-api-gate v{pkg_version('kryten-api-gate')}")
     logger.info(f"Channel: {config.channel} @ {config.domain}")
     logger.info(f"NATS: {config.nats_url}")
     logger.info(f"HTTP: {config.http_host}:{config.http_port}")
@@ -60,7 +61,7 @@ async def main_async() -> None:
         "channels": [{"domain": config.domain, "channel": config.channel}],
         "service": {
             "name": config.service_name,
-            "version": "0.1.0",
+            "version": pkg_version("kryten-api-gate"),
             "enable_lifecycle": True,
             "enable_heartbeat": True,
             "enable_discovery": True,
