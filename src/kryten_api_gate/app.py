@@ -8,6 +8,7 @@ from .config import Config
 from .routes import (
     admin,
     chat,
+    economy,
     emotes,
     filters,
     kv,
@@ -53,5 +54,6 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(library.router, prefix="/api/v1/library", tags=["library"])
     app.include_router(kv.router, prefix="/api/v1/kv", tags=["kv"])
     app.include_router(state.router, prefix="/api/v1/state", tags=["state"])
+    app.include_router(economy.router, prefix="/api/v1/economy", tags=["economy"])
 
     return app

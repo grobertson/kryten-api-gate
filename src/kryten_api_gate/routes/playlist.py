@@ -19,7 +19,7 @@ class AddMediaRequest(BaseModel):
 
 
 class MoveMediaRequest(BaseModel):
-    position: int
+    position: int | str
 
 
 class SetTempRequest(BaseModel):
@@ -42,7 +42,7 @@ async def add_media(
     )
     if not result.get("success"):
         raise HTTPException(status_code=500, detail=result.get("error", "Failed to add video"))
-    return result
+    return {"success": True, "uid": result.get("uid")}
 
 
 @router.delete("/{uid}")

@@ -18,6 +18,8 @@ async def get_user(
     config: Config = Depends(get_config),
 ) -> dict:
     result = await client.get_user(config.channel, username, domain=config.domain)
+    if result is None:
+        return {"username": username, "rank": 0, "online": False}
     return result
 
 

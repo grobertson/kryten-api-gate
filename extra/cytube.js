@@ -16,7 +16,7 @@
     // Config
     // -----------------------------------------------------------------------
     const DEBUG        = false;
-    const KRYTEN_BASE  = 'http://127.0.0.1:24444/api/v1';
+    const KRYTEN_BASE  = 'https://www.dropsugar.co:24444/api/v1';
     const KRYTEN_TOKEN = 'your-api-key';   // value from api_keys in kryten-api-gate config.json
     const QUEUE_TEMP   = false;            // true = item removed from playlist after playback
 

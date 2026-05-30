@@ -11,6 +11,12 @@
 		},
 		{
 			"path": "../Kryten-Robot"
+		},
+		{
+			"path": "../kryten-webqueue"
+		},
+		{
+			"path": "../kryten-economy"
 		}
 	]
 }
