@@ -1,6 +1,6 @@
 """Dependency injection for kryten-api-gate routes."""
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from kryten import KrytenClient
 
 from .config import Config
@@ -9,7 +9,10 @@ from .playback_cache import PlaybackCache
 
 def get_client(request: Request) -> KrytenClient:
     """Get the shared KrytenClient instance."""
-    return request.app.state.client
+    try:
+        return request.app.state.client
+    except AttributeError as exc:
+        raise HTTPException(status_code=503, detail=f"Service not ready: {exc}") from exc
 
 
 def get_config(request: Request) -> Config:
