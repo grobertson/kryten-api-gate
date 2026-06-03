@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kryten-api-gate"
-version = "0.3.8"
+version = "0.3.9"
 description = "HTTP REST gateway for the Kryten ecosystem — exposes KrytenClient via FastAPI"
 readme = "README.md"
 license = "MIT"
