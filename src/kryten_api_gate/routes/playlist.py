@@ -32,17 +32,27 @@ async def add_media(
     client: KrytenClient = Depends(get_client),
     config: Config = Depends(get_config),
 ) -> dict:
-    result = await client.add_media(
-        config.channel,
-        body.type,
-        body.id,
-        position=body.position,
-        temp=body.temp,
-        domain=config.domain,
-    )
+    try:
+        result = await client.add_media(
+            config.channel,
+            body.type,
+            body.id,
+            position=body.position,
+            temp=body.temp,
+            domain=config.domain,
+        )
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="Robot command timed out")
+    # Outer envelope: {service, command, success, data}. success=False means the
+    # Robot threw an exception (sender/connector unavailable, etc.).
     if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Failed to add video"))
-    return {"success": True, "uid": result.get("uid")}
+        raise HTTPException(status_code=502, detail=result.get("error", "Robot command failed"))
+    # Inner data: {success, uid}. success=False means add_video returned False
+    # (e.g. CyTube not connected).
+    data = result.get("data", {})
+    if not data.get("success"):
+        raise HTTPException(status_code=500, detail=data.get("error", "Failed to add video"))
+    return {"success": True, "uid": data.get("uid")}
 
 
 @router.delete("/{uid}")

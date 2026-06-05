@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-04
+
+### Fixed
+
+- **`/playlist/add` response unwrapping** — Robot wraps handler results in an outer `{service, command, success, data}` envelope; the route was checking the outer `success` (correct) but returning `result.get("uid")` (always `None`) instead of `result["data"]["uid"]`. Also added inner `data.success` check so a CyTube-level failure (e.g. not connected) is surfaced as HTTP 500 rather than silently returning `uid: null`
+- **`TimeoutError` handling on `/playlist/add`** — If the Robot NATS subject times out, the unhandled `TimeoutError` now becomes HTTP 504 instead of an unhandled exception
+- **502 vs 500 status codes** — When the Robot sends back `{success: false}` (exception in handler — e.g. sender not initialised), the route now returns HTTP 502 Bad Gateway instead of 500, distinguishing a downstream failure from an internal server error
+
+[0.4.0]: https://github.com/grobertson/kryten-api-gate/releases/tag/v0.4.0
+
 ## [0.3.9] - 2026-06-02
 
 ### Fixed
