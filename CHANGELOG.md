@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-06-04
+
+### Changed
+
+- **`/playlist/add` surfaces CyTube `queueFail` as HTTP 422** — When the Robot reports that CyTube rejected the media (e.g. a bad/302 manifest URL), the response now carries a structured `queue_fail` payload. The route returns HTTP 422 Unprocessable Entity with the rejection reason so callers can distinguish a media rejection (refund + notify) from an internal failure (HTTP 500)
+
+[0.4.1]: https://github.com/grobertson/kryten-api-gate/releases/tag/v0.4.1
+
 ## [0.4.0] - 2026-06-04
 
 ### Fixed

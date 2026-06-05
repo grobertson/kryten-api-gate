@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "../kryten-economy"
+		},
+		{
+			"path": "../../cmsutils"
 		}
 	]
 }

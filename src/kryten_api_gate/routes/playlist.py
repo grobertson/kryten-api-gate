@@ -48,9 +48,14 @@ async def add_media(
     if not result.get("success"):
         raise HTTPException(status_code=502, detail=result.get("error", "Robot command failed"))
     # Inner data: {success, uid}. success=False means add_video returned False
-    # (e.g. CyTube not connected).
+    # (e.g. CyTube not connected) or CyTube rejected the media (queueFail).
     data = result.get("data", {})
     if not data.get("success"):
+        # A queueFail carries a structured reason (bad manifest, 302, etc.).
+        # Surface it as 422 so callers can distinguish a media rejection from
+        # an internal failure and refund/notify accordingly.
+        if data.get("queue_fail"):
+            raise HTTPException(status_code=422, detail=data.get("error", "Queue rejected by CyTube"))
         raise HTTPException(status_code=500, detail=data.get("error", "Failed to add video"))
     return {"success": True, "uid": data.get("uid")}
 
