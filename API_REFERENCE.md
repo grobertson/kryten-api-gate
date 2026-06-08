@@ -1004,8 +1004,10 @@ curl -H "Authorization: Bearer $TOKEN" $BASE/state/now-playing
 ```
 
 ```json
-{ "title": "Never Gonna Give You Up", "type": "yt", "id": "dQw4w9WgXcQ", "seconds": 47, "paused": false }
+{ "title": "Never Gonna Give You Up", "type": "yt", "id": "dQw4w9WgXcQ", "uid": 42, "seconds": 47, "paused": false }
 ```
+
+> `uid` is the playlist UID of the now-playing item (added by kryten-robot ≥ 1.9.0). It may be absent on older bot versions or before the first `setCurrent` event after connect.
 
 ---
 
