@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-06-14
+
+### Added
+
+- **`GET /economy/account/{username}`** — Proxies the new economy `account.summary` command. Returns a full user-facing snapshot (balance, lifetime earned, current rank with level/tier count, next-rank progress, active perks, spend discount, currency name/symbol, and editable vanity items with costs) so clients can render a complete progression panel in one request.
+- **`POST /economy/vanity/greeting`** — Purchase/update a user's custom greeting (proxies `vanity.set_greeting`).
+- **`POST /economy/vanity/color`** — Purchase/update a user's custom chat color from any 6-digit hex (proxies `vanity.set_color`).
+- **API_REFERENCE economy section** — Documented the balance, transactions, account, and vanity endpoints (previously undocumented).
+
+[0.5.0]: https://github.com/grobertson/kryten-api-gate/releases/tag/v0.5.0
+
 ## [0.4.1] - 2026-06-04
 
 ### Changed

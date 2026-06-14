@@ -1025,6 +1025,121 @@ curl -H "Authorization: Bearer $TOKEN" $BASE/state/user/someuser
 
 ---
 
+## Economy
+
+Proxies to the kryten-economy service (Z-Coin). All economy commands are scoped
+to the gateway's configured `channel`.
+
+### `GET /economy/balance/{username}`
+
+Current balance, lifetime earned, and rank name for a user.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" $BASE/economy/balance/someuser
+```
+
+```json
+{ "found": true, "username": "someuser", "balance": 5011144, "lifetime_earned": 29960293, "rank_name": "Hollywood Mogul" }
+```
+
+---
+
+### `GET /economy/transactions/{username}`
+
+Paginated transaction history (most recent first).
+
+Query params: `limit` (1–100, default 20), `offset` (default 0).
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$BASE/economy/transactions/someuser?limit=20&offset=0"
+```
+
+```json
+{
+  "username": "someuser",
+  "limit": 20,
+  "offset": 0,
+  "transactions": [
+    { "id": 9912, "amount": -7500, "type": "spend", "reason": "Vanity: chat_color", "trigger_id": "spend.vanity.chat_color", "created_at": "2026-06-14T00:39:02Z" }
+  ]
+}
+```
+
+---
+
+### `GET /economy/account/{username}`
+
+Full user-facing account snapshot: balance, lifetime earned, current rank
+(name/level/tier count), next-rank progress, active perks, spend discount, and
+editable vanity items with their costs. Designed to render a complete
+progression panel in a single request.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" $BASE/economy/account/someuser
+```
+
+```json
+{
+  "found": true,
+  "username": "someuser",
+  "balance": 5011144,
+  "lifetime_earned": 29960293,
+  "lifetime_spent": 1200000,
+  "currency_name": "Z-Coin",
+  "currency_symbol": "Z",
+  "rank": { "name": "Hollywood Mogul", "index": 8, "level": 9, "tier_count": 10, "min_lifetime_earned": 25000000 },
+  "next_rank": { "name": "Hollywood Legend", "min_lifetime_earned": 50000000, "remaining": 20039707, "progress_percent": 59.9 },
+  "perks": ["10% discount", "priority queue position"],
+  "spend_discount_percent": 11.0,
+  "vanity": { "custom_greeting": "Welcome back, legend!", "custom_color": "#DC143C" },
+  "vanity_costs": { "custom_greeting": 5000, "custom_color": 7500 },
+  "vanity_enabled": { "custom_greeting": true, "custom_color": true }
+}
+```
+
+Returns `{ "found": false }` when the user has no economy account yet.
+
+---
+
+### `POST /economy/vanity/greeting`
+
+Purchase or update the user's custom greeting. Charges the configured cost
+(after any rank discount) and persists the value.
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"username": "someuser", "value": "Welcome back, legend!"}' \
+  $BASE/economy/vanity/greeting
+```
+
+```json
+{ "username": "someuser", "item_type": "custom_greeting", "value": "Welcome back, legend!", "charged": 4450, "discount": 0.11, "new_balance": 5006694 }
+```
+
+Validation: greeting must be 1–200 characters. Insufficient funds or invalid
+input return `502` with the economy error message.
+
+---
+
+### `POST /economy/vanity/color`
+
+Purchase or update the user's custom chat color. Accepts any 6-digit hex
+(`#RRGGBB` or `RRGGBB`), normalized to upper-case `#RRGGBB`.
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"username": "someuser", "value": "#DC143C"}' \
+  $BASE/economy/vanity/color
+```
+
+```json
+{ "username": "someuser", "item_type": "chat_color", "value": "#DC143C", "charged": 6675, "discount": 0.11, "new_balance": 5000019 }
+```
+
+Validation: an invalid color returns `502` with `Invalid color. Provide a 6-digit hex like #1A2B3C.`
+
+---
+
 ## Error Responses
 
 All errors follow FastAPI's standard envelope:

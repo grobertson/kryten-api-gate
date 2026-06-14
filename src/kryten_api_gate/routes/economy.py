@@ -48,6 +48,57 @@ async def get_transactions(
     return _unwrap(result)
 
 
+# ── Account summary & vanity items ─────────────────────────────
+
+@router.get("/account/{username}")
+async def get_account_summary(
+    username: str,
+    client: KrytenClient = Depends(get_client),
+    config: Config = Depends(get_config),
+) -> dict:
+    """Full user-facing account snapshot: balance, rank progression, perks, vanity."""
+    result = await client.economy_request(
+        config.channel, "account.summary", {"username": username}
+    )
+    return _unwrap(result)
+
+
+class VanityGreetingRequest(BaseModel):
+    username: str
+    value: str
+
+
+@router.post("/vanity/greeting")
+async def set_vanity_greeting(
+    body: VanityGreetingRequest,
+    client: KrytenClient = Depends(get_client),
+    config: Config = Depends(get_config),
+) -> dict:
+    """Purchase/update the user's custom greeting."""
+    result = await client.economy_request(
+        config.channel, "vanity.set_greeting", body.model_dump()
+    )
+    return _unwrap(result)
+
+
+class VanityColorRequest(BaseModel):
+    username: str
+    value: str
+
+
+@router.post("/vanity/color")
+async def set_vanity_color(
+    body: VanityColorRequest,
+    client: KrytenClient = Depends(get_client),
+    config: Config = Depends(get_config),
+) -> dict:
+    """Purchase/update the user's custom chat color (6-digit hex)."""
+    result = await client.economy_request(
+        config.channel, "vanity.set_color", body.model_dump()
+    )
+    return _unwrap(result)
+
+
 # ── Phase 2: Queue spending ────────────────────────────────────
 
 class QueuePreviewRequest(BaseModel):
