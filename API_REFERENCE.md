@@ -1138,6 +1138,32 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
 
 Validation: an invalid color returns `502` with `Invalid color. Provide a 6-digit hex like #1A2B3C.`
 
+When applied, the purchased color is also written into the channel's CyTube CSS
+by kryten-economy (a per-user `.chat-msg-<user>` rule in an auto-managed block);
+bot/manually-styled users on the economy's protected list are skipped.
+
+---
+
+### `POST /economy/vanity/shoutout`
+
+Purchase a shoutout — the bot immediately posts the user's message to public
+chat as `📢 <username>: <message>`. Charges the configured cost (after any rank
+discount) and enforces a per-user cooldown.
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"username": "someuser", "value": "Go watch the main event!"}' \
+  $BASE/economy/vanity/shoutout
+```
+
+```json
+{ "username": "someuser", "message": "Go watch the main event!", "charged": 445, "discount": 0.11, "new_balance": 5006249 }
+```
+
+Validation: message must be 1–`max_length` characters (default 200). A shoutout
+during the cooldown window, insufficient funds, or an over-length message
+return `502` with the economy error message.
+
 ---
 
 ## Error Responses

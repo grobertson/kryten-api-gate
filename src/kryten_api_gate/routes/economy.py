@@ -99,6 +99,24 @@ async def set_vanity_color(
     return _unwrap(result)
 
 
+class VanityShoutoutRequest(BaseModel):
+    username: str
+    value: str
+
+
+@router.post("/vanity/shoutout")
+async def set_vanity_shoutout(
+    body: VanityShoutoutRequest,
+    client: KrytenClient = Depends(get_client),
+    config: Config = Depends(get_config),
+) -> dict:
+    """Purchase a shoutout — bot posts the user's message to public chat."""
+    result = await client.economy_request(
+        config.channel, "vanity.shoutout", body.model_dump()
+    )
+    return _unwrap(result)
+
+
 # ── Phase 2: Queue spending ────────────────────────────────────
 
 class QueuePreviewRequest(BaseModel):
