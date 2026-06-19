@@ -108,3 +108,44 @@ def test_queue_refund_proxied(client: TestClient, mock_client: AsyncMock) -> Non
     _channel, command, payload = mock_client.economy_request.call_args.args
     assert command == "spending.queue_refund"
     assert payload["reason"] == "user cancelled"
+
+
+# ── POST /economy/vanity/shoutout ────────────────────────────────────────────
+
+def test_vanity_shoutout_proxied(client: TestClient, mock_client: AsyncMock) -> None:
+    """Shoutout body is forwarded flat to the vanity.shoutout command."""
+    mock_client.economy_request.return_value = {
+        "success": True,
+        "data": {
+            "username": "alice",
+            "message": "go watch",
+            "charged": 445,
+            "new_balance": 9000,
+        },
+    }
+    resp = client.post(
+        "/api/v1/economy/vanity/shoutout",
+        json={"username": "alice", "value": "go watch"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["message"] == "go watch"
+    _channel, command, payload = mock_client.economy_request.call_args.args
+    assert command == "vanity.shoutout"
+    assert payload["username"] == "alice"
+    assert payload["value"] == "go watch"
+
+
+def test_vanity_shoutout_economy_error(client: TestClient, mock_client: AsyncMock) -> None:
+    """Cooldown / funding errors from economy surface as HTTP 502."""
+    mock_client.economy_request.return_value = {
+        "success": False,
+        "error": "Shoutout cooldown: 5 minute(s) remaining.",
+    }
+    resp = client.post(
+        "/api/v1/economy/vanity/shoutout",
+        json={"username": "alice", "value": "spammy"},
+    )
+    assert resp.status_code == 502
+    assert "cooldown" in resp.json()["detail"].lower()
+
