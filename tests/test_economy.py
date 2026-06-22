@@ -149,3 +149,47 @@ def test_vanity_shoutout_economy_error(client: TestClient, mock_client: AsyncMoc
     assert resp.status_code == 502
     assert "cooldown" in resp.json()["detail"].lower()
 
+
+# ── GET /economy/race ────────────────────────────────────────────────────────
+
+def test_get_race_state_active(client: TestClient, mock_client: AsyncMock) -> None:
+    """Proxies race.state and returns the live frame for the gate's channel."""
+    mock_client.economy_request.return_value = {
+        "success": True,
+        "data": {
+            "active": True,
+            "frame": {"phase": "racing", "tick": 4, "racers": []},
+        },
+    }
+    resp = client.get("/api/v1/economy/race")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["active"] is True
+    assert data["frame"]["phase"] == "racing"
+    channel, command, payload = mock_client.economy_request.call_args.args
+    assert command == "race.state"
+    assert payload == {}
+
+
+def test_get_race_state_idle(client: TestClient, mock_client: AsyncMock) -> None:
+    """No active race → active False, frame None."""
+    mock_client.economy_request.return_value = {
+        "success": True,
+        "data": {"active": False, "frame": None},
+    }
+    resp = client.get("/api/v1/economy/race")
+    assert resp.status_code == 200
+    assert resp.json() == {"active": False, "frame": None}
+
+
+def test_get_race_state_economy_error(client: TestClient, mock_client: AsyncMock) -> None:
+    """An economy failure surfaces as HTTP 502."""
+    mock_client.economy_request.return_value = {
+        "success": False,
+        "error": "economy unavailable",
+    }
+    resp = client.get("/api/v1/economy/race")
+    assert resp.status_code == 502
+    assert "economy unavailable" in resp.json()["detail"]
+
+

@@ -1101,6 +1101,48 @@ Returns `{ "found": false }` when the user has no economy account yet.
 
 ---
 
+### `GET /economy/race`
+
+Live race snapshot for the web spectator view (read-only, safe to poll).
+Proxies the economy `race.state` command, scoped to the gate's channel.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" $BASE/economy/race
+```
+
+```json
+{
+  "active": true,
+  "frame": {
+    "race_id": "a1b2c3d4e5f6",
+    "channel": "Channel-Z",
+    "phase": "racing",
+    "tick": 7,
+    "finish_distance": 20.0,
+    "leader": "Blue",
+    "betting_closes_in": 0,
+    "min_bet": 10,
+    "symbol": "Z",
+    "racers": [
+      { "color": "Blue", "emoji": "🔵", "progress": 12.4, "pct": 62.0, "position": 1, "odds": "2.5x", "trait": "⚡ Fast start" }
+    ],
+    "pool": 1500,
+    "bettor_count": 4,
+    "bets_by_color": { "Blue": { "amount": 900, "bettors": 2 } },
+    "winner": null,
+    "payouts": []
+  }
+}
+```
+
+`phase` is one of `betting`, `racing`, or `finished`. During `betting`,
+`betting_closes_in` counts down the wager window. When `finished`, `winner` is
+`{ "color", "emoji" }` and `payouts` lists `{ "username", "net" }` (top winners).
+Returns `{ "active": false, "frame": null }` when no race is running. Economy
+failures surface as `502`.
+
+---
+
 ### `POST /economy/vanity/greeting`
 
 Purchase or update the user's custom greeting. Charges the configured cost

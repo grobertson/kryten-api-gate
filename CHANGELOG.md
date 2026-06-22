@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-06-22
+
+### Added
+
+- **`GET /economy/race`** — Proxies the new economy `race.state` command. Returns a live race snapshot for the gate's channel (`{"active": bool, "frame": {...}|None}`) so a web spectator view can animate the race — phase, every racer's position/progress/odds, the betting countdown, a per-colour bet summary, and the winner/payouts once it finishes. Read-only and safe to poll; economy failures surface as HTTP 502.
+
+[0.7.0]: https://github.com/grobertson/kryten-api-gate/releases/tag/v0.7.0
+
 ## [0.6.0] - 2026-06-19
 
 ### Added

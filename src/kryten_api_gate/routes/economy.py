@@ -63,6 +63,23 @@ async def get_account_summary(
     return _unwrap(result)
 
 
+# ── Race view (web spectator feed) ─────────────────────────────
+
+@router.get("/race")
+async def get_race_state(
+    client: KrytenClient = Depends(get_client),
+    config: Config = Depends(get_config),
+) -> dict:
+    """Live race snapshot for the web race view (read-only, safe to poll).
+
+    Proxies the economy ``race.state`` command. Returns
+    ``{"active": bool, "frame": {...}|None}`` — the live race frame while one is
+    running, the final result for a short window after it finishes, else inactive.
+    """
+    result = await client.economy_request(config.channel, "race.state", {})
+    return _unwrap(result)
+
+
 class VanityGreetingRequest(BaseModel):
     username: str
     value: str
