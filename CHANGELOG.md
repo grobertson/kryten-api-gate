@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-07-04
+
+### Added
+
+- **Moderator Service integration** — 11 new endpoints that proxy to the [kryten-moderator](https://github.com/grobertson/kryten-moderator) service over NATS (`kryten.moderator.command`, 10 s timeout).
+  - `GET /api/v1/channels/{channel}/moderation` — list all moderation entries (optional `filter` query param: `ban`/`smute`/`mute`)
+  - `POST /api/v1/channels/{channel}/moderation` — add or replace a moderation entry (`entry.add`)
+  - `GET /api/v1/channels/{channel}/moderation/{username}` — get a single entry (`entry.get`)
+  - `DELETE /api/v1/channels/{channel}/moderation/{username}` — remove an entry (`entry.remove`)
+  - `GET /api/v1/channels/{channel}/patterns` — list banned username patterns (`pattern.list`)
+  - `POST /api/v1/channels/{channel}/patterns` — register a banned pattern (`pattern.add`)
+  - `DELETE /api/v1/channels/{channel}/patterns/{pattern}` — remove a pattern (`pattern.remove`)
+  - `GET /api/v1/channels/{channel}/users/recent` — list users seen within a rolling time window (`users.recent`)
+  - `GET /api/v1/moderator/ping` — liveness check for kryten-moderator (`system.ping`)
+  - `GET /api/v1/moderator/health` — health status of kryten-moderator (`system.health`)
+  - `GET /api/v1/moderator/stats` — runtime statistics from kryten-moderator (`system.stats`)
+- Error mapping: moderator timeout → `503`; moderator `success: false` errors → `400`/`404`/`500` based on the error string.
+
+[0.8.0]: https://github.com/grobertson/kryten-api-gate/compare/v0.7.0...v0.8.0
+
 ## [0.7.0] - 2026-06-22
 
 ### Added

@@ -14,6 +14,7 @@ from .routes import (
     kv,
     library,
     moderation,
+    moderator_service,
     playback,
     playlist,
     polls,
@@ -47,6 +48,16 @@ def create_app(config: Config | None = None) -> FastAPI:
     app.include_router(playlist.router, prefix="/api/v1/playlist", tags=["playlist"])
     app.include_router(playback.router, prefix="/api/v1/playback", tags=["playback"])
     app.include_router(moderation.router, prefix="/api/v1/moderation", tags=["moderation"])
+    app.include_router(
+        moderator_service.channels_router,
+        prefix="/api/v1/channels",
+        tags=["moderator"],
+    )
+    app.include_router(
+        moderator_service.system_router,
+        prefix="/api/v1/moderator",
+        tags=["moderator"],
+    )
     app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
     app.include_router(emotes.router, prefix="/api/v1/emotes", tags=["emotes"])
     app.include_router(filters.router, prefix="/api/v1/filters", tags=["filters"])

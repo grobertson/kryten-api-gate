@@ -442,6 +442,317 @@ curl -X DELETE -H "Authorization: Bearer $TOKEN" $BASE/moderation/ban/7
 
 ---
 
+## Moderator Service
+
+Persistent moderation tracking via [kryten-moderator](https://github.com/grobertson/kryten-moderator).
+All requests are proxied over NATS to `kryten.moderator.command` with a 10 s timeout.
+The `{channel}` path segment is the CyTube channel name; `domain` is an optional query parameter
+(defaults to the first channel configured in the moderator service).
+
+> **Error mapping**
+> | Condition | HTTP status |
+> |-----------|-------------|
+> | Moderator did not respond (timeout) | `503 Service Unavailable` |
+> | Moderator returned error containing "required" / "must be" / "invalid" | `400 Bad Request` |
+> | Moderator returned error containing "not found" / "not in" | `404 Not Found` |
+> | Any other moderator error | `500 Internal Server Error` |
+
+---
+
+### `GET /channels/{channel}/moderation`
+
+List all moderation entries for a channel.
+
+| Query param | Type | Default | Description |
+|-------------|------|---------|-------------|
+| `domain` | string | — | CyTube domain (omit to use moderator default) |
+| `filter` | `ban`\|`smute`\|`mute` | — | Return only entries with this action |
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$BASE/channels/lounge/moderation"
+curl -H "Authorization: Bearer $TOKEN" "$BASE/channels/lounge/moderation?filter=ban"
+```
+
+```json
+{
+  "channel": "lounge",
+  "domain": "cytu.be",
+  "count": 1,
+  "entries": [
+    {
+      "username": "baduser",
+      "action": "ban",
+      "reason": "spamming",
+      "moderator": "admin",
+      "timestamp": "2026-07-04T00:00:00",
+      "ip_correlation_source": null,
+      "pattern_match": null
+    }
+  ]
+}
+```
+
+---
+
+### `POST /channels/{channel}/moderation`
+
+Add a user to the moderation list, or replace an existing entry.
+Returns `201 Created` with the stored entry.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `username` | string | yes | Target username |
+| `action` | `ban`\|`smute`\|`mute` | yes | Action to apply |
+| `domain` | string | no | CyTube domain |
+| `reason` | string | no | Human-readable reason |
+| `moderator` | string | no | Who issued the action (defaults to `"cli"`) |
+
+```bash
+curl -X POST "$BASE/channels/lounge/moderation" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "baduser", "action": "ban", "reason": "spamming", "moderator": "admin"}'
+```
+
+```json
+{
+  "username": "baduser",
+  "action": "ban",
+  "reason": "spamming",
+  "moderator": "admin",
+  "timestamp": "2026-07-04T00:00:00",
+  "channel": "lounge",
+  "domain": "cytu.be"
+}
+```
+
+> If the user is currently online the action is applied immediately.
+
+---
+
+### `GET /channels/{channel}/moderation/{username}`
+
+Get the moderation entry for a specific user.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$BASE/channels/lounge/moderation/baduser"
+```
+
+```json
+{
+  "username": "baduser",
+  "channel": "lounge",
+  "domain": "cytu.be",
+  "moderated": true,
+  "action": "ban",
+  "reason": "spamming",
+  "moderator": "admin",
+  "timestamp": "2026-07-04T00:00:00",
+  "ips": ["1.2.3.x"],
+  "ip_correlation_source": null,
+  "pattern_match": null
+}
+```
+
+Returns `{ "moderated": false }` (with channel/domain) if the user is not moderated.
+
+---
+
+### `DELETE /channels/{channel}/moderation/{username}`
+
+Remove a user from the moderation list. Returns `404` if the user is not listed.
+If the user is online and was muted/smuted they are unmuted immediately.
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $TOKEN" "$BASE/channels/lounge/moderation/baduser"
+```
+
+```json
+{ "username": "baduser", "channel": "lounge", "domain": "cytu.be", "removed": true }
+```
+
+---
+
+### `GET /channels/{channel}/patterns`
+
+List all banned username patterns for a channel.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$BASE/channels/lounge/patterns"
+```
+
+```json
+{
+  "channel": "lounge",
+  "domain": "cytu.be",
+  "count": 1,
+  "patterns": [
+    {
+      "pattern": "1488",
+      "is_regex": false,
+      "action": "ban",
+      "added_by": "admin",
+      "description": "Nazi hate symbol",
+      "timestamp": "2026-07-04T00:00:00"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /channels/{channel}/patterns`
+
+Register a banned username pattern. Returns `201 Created`.
+When a joining user's name matches the pattern the configured action is applied automatically.
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `pattern` | string | yes | — | Pattern string or regular expression |
+| `is_regex` | bool | no | `false` | Treat `pattern` as a regex; `false` = substring match |
+| `action` | `ban`\|`smute`\|`mute` | no | `"ban"` | Action to apply on match |
+| `domain` | string | no | — | CyTube domain |
+| `description` | string | no | — | Human-readable label shown in logs |
+| `added_by` | string | no | `"cli"` | Who added the pattern |
+
+```bash
+curl -X POST "$BASE/channels/lounge/patterns" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"pattern": "1488", "action": "ban", "description": "Nazi hate symbol", "added_by": "admin"}'
+```
+
+---
+
+### `DELETE /channels/{channel}/patterns/{pattern}`
+
+Remove a registered pattern by its exact string. Returns `404` if not found.
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $TOKEN" \
+  "$BASE/channels/lounge/patterns/1488"
+```
+
+```json
+{ "pattern": "1488", "channel": "lounge", "domain": "cytu.be", "removed": true }
+```
+
+> **URL encoding:** URL-encode the pattern if it contains special characters, e.g. `%5Cspam%5Cd%2B` for a regex `\spam\d+`.
+
+---
+
+### `GET /channels/{channel}/users/recent`
+
+List users seen in a channel within a rolling time window.
+Designed to surface "driveby" accounts. Results are sorted by `last_seen` descending.
+
+| Query param | Type | Default | Description |
+|-------------|------|---------|-------------|
+| `domain` | string | — | CyTube domain |
+| `window_minutes` | float (>0) | `60` | How far back to look (capped at the moderator's `history_retention_hours × 60`) |
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "$BASE/channels/lounge/users/recent?window_minutes=30"
+```
+
+```json
+{
+  "channel": "lounge",
+  "domain": "cytu.be",
+  "window_minutes": 30.0,
+  "generated_at": "2026-07-04T01:00:00+00:00",
+  "count": 1,
+  "users": [
+    {
+      "username": "driveby_user",
+      "moderation_action": null,
+      "session_count": 2,
+      "total_messages": 1,
+      "last_seen": "2026-07-04T00:59:00+00:00",
+      "sessions": [
+        {
+          "joined_at": "2026-07-04T00:45:00+00:00",
+          "left_at": "2026-07-04T00:45:12+00:00",
+          "duration_seconds": 12.0,
+          "ip": "1.2.3.x",
+          "message_count": 0
+        }
+      ]
+    }
+  ]
+}
+```
+
+`moderation_action` is the user's current moderation status (`"ban"`, `"smute"`, `"mute"`, or `null`).
+`left_at` / `duration_seconds` are `null` for sessions where the user is still present.
+
+---
+
+### `GET /moderator/ping`
+
+Liveness check for the kryten-moderator service. Returns version, uptime, and metrics endpoint URL.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$BASE/moderator/ping"
+```
+
+```json
+{
+  "pong": true,
+  "service": "moderator",
+  "version": "0.7.0",
+  "uptime_seconds": 3600.0,
+  "timestamp": "2026-07-04T00:00:00",
+  "metrics_endpoint": "http://localhost:28284/metrics"
+}
+```
+
+---
+
+### `GET /moderator/health`
+
+Health status of the kryten-moderator service.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$BASE/moderator/health"
+```
+
+```json
+{ "service": "moderator", "status": "healthy", "version": "0.7.0", "uptime_seconds": 3600.0 }
+```
+
+---
+
+### `GET /moderator/stats`
+
+Full runtime statistics from the kryten-moderator service.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "$BASE/moderator/stats"
+```
+
+```json
+{
+  "service": "moderator",
+  "version": "0.7.0",
+  "uptime_seconds": 3600.0,
+  "events_processed": 1234,
+  "commands_processed": 56,
+  "messages_checked": 1200,
+  "messages_flagged": 3,
+  "users_tracked": 89,
+  "moderation_entries": 12,
+  "ip_mappings": 450,
+  "patterns": 4,
+  "bans_enforced": 3,
+  "smutes_enforced": 5,
+  "mutes_enforced": 2
+}
+```
+
+---
+
 ## Admin
 
 ### `GET /admin/motd`
@@ -1223,6 +1534,7 @@ All errors follow FastAPI's standard envelope:
 | `404` | Resource not found |
 | `422` | Request body failed validation (field missing or wrong type) |
 | `500` | Unhandled error in the gateway or bot |
+| `503` | Downstream service (kryten-moderator) did not respond within the timeout |
 
 ---
 
