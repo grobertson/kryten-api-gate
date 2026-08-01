@@ -1,0 +1,14 @@
+title = "kryten-api-gate gitleaks configuration"
+
+# Start from gitleaks' built-in ruleset and layer repo-specific allowlisting on top.
+[extend]
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Allowlist — intentional fixtures ONLY. Never allowlist a real credential.
+# ---------------------------------------------------------------------------
+[allowlist]
+description = "Fake test API key used in the FastAPI test suite. Not a real credential."
+paths = [
+    '''tests/conftest\.py''',
+]
